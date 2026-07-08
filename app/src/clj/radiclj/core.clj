@@ -64,42 +64,47 @@
        distinct
        (mapv cljs-quote)))
 
+(def optionals
+  '{n [n (partial radiclj.rt/stack-name req)]
+    h [h (partial radiclj.rt/stack-hash req)]
+    id [id (radiclj.rt/stack-name req "")]})
+
 (defmacro defcomponent [name binding & body]
   (let [name (vary-meta name assoc :syms (get-syms body))
         [simple _ nested] (partition-by symbol? binding)]
     `(defn ~name [~'req]
       (let [~@(bind-simple simple)
             ~@(bind-nested nested)
-            ~'n (partial rt/stack-name ~'req)
-            ~'h (partial rt/stack-hash ~'req)]
+            ~@(->> body util/flatten-all (mapcat optionals) distinct)]
         ~@body))))
 
+(defn- apply-component [req component]
+  (->> req
+       :params
+       rt/reconstitute
+       (assoc req :data)
+       component
+       walk/standardize))
 (defn make-handler
-  ([component component-sym]
-   (make-handler component component-sym nil))
-  ([component component-sym source]
-   (let [subendpoints (tree/extract-endpoints component-sym)]
+  ([root-var]
+   (make-handler root-var nil))
+  ([root-var source]
+   (let [subendpoints (tree/extract-endpoints root-var)
+         component @root-var]
      (fn [req]
        (render/html-response
         (if (-> req :request-method (= :get))
           (if source
-            (->> req source (assoc req :data) component)
-            (component req))
-          (let [existing-state
-                (->> req
-                     :params
-                     rt/reconstitute
-                     (assoc req :data)
-                     component)]
-            (if-let [{:keys [post target]} (some-> req :params :action read-string)]
-              (if-let [f (subendpoints post)]
-                (let [standardized (walk/standardize existing-state)
-                      updated (f req)]
-                  (if-let [path (and target (walk/id->path target standardized))]
-                    (walk/unvectorize (assoc-in standardized path updated))
-                    (walk/standardize-light updated)))
-                (walk/standardize-light existing-state))
-              (walk/standardize-light existing-state)))))))))
-
-(defmacro make-handlerm [component source]
-  `(make-handler ~component '~component ~source))
+            (->> req source (assoc req :data) component walk/standardize)
+            (-> req component walk/standardize))
+          (if-let [{:keys [post target]} (some-> req :params :action read-string)]
+            (if-let [f (subendpoints post)]
+              (let [updated (apply-component req f)]
+                (if target
+                  (let [standardized (apply-component req component)]
+                    (if-let [path (walk/id->path target standardized)]
+                      (walk/assocl-in standardized path updated)
+                      updated))
+                  updated))
+              (apply-component req component))
+            (apply-component req component))))))))

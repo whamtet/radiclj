@@ -37,6 +37,11 @@
     {:get {:no-doc  true
            :swagger {:info {:title "radiclj.app API"}}
            :handler (swagger/create-swagger-handler)}}]
+   ["/inspect"
+    (fn [{:keys [session]}]
+      {:status 200
+       :headers {"Content-Type" "text/html"}
+       :body (pr-str session)})]
    ["/health"
     ;; note that use of the var is necessary
     ;; for reitit to reload routes without

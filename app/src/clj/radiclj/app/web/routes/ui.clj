@@ -23,7 +23,7 @@
 
 ;; Routes
 (defn ui-routes [_opts]
-  [["/" (radiclj/make-handlerm click-to-edit/hi nil)]])
+  [["/" (radiclj/make-handler #'click-to-edit/page click-to-edit/default-data)]])
 
 (derive :reitit.routes/ui :reitit/routes)
 (defmethod ig/init-key :reitit.routes/ui

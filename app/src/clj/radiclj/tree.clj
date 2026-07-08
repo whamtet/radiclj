@@ -14,5 +14,6 @@
         (assoc mappings (str sym) var)
         mappings))))
 
-(defn extract-endpoints [sym]
-  (extract-endpoints* *ns* sym #{}))
+(defn extract-endpoints [root-var]
+  (let [{:keys [ns name]} (meta root-var)]
+    (extract-endpoints* ns name #{})))
