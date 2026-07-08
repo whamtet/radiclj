@@ -10,7 +10,7 @@
   [:input {:type "hidden" :name n :value v}])
 
 (defcomponent ^:endpoint form-edit [first-name last-name email]
-  [:form {:id id :hx-put "form-ro" :hx-target "this"}
+  [:form#anchor {:method "POST"}
    [:div
     [:label.mr "First Name"]
     (text "first-name" first-name)]
@@ -26,7 +26,7 @@
 (defcomponent ^:endpoint form-ro [first-name last-name email]
   ;; make sure form-edit is included in endpoints
   form-edit
-  [:form {:method "POST"}
+  [:form#anchor {:method "POST"}
    (hidden "first-name" first-name)
    [:div [:label "First Name"] ": " first-name]
    (hidden "last-name" last-name)
@@ -34,7 +34,7 @@
    (hidden "email" email)
    [:div [:label "Email"] ": " email]
    [:button.margin
-    {:type "submit" :name "action" :value {:post "form-edit"}}
+    {:type "submit" :name "action" :value {:post "form-edit" :target "#anchor"}}
     "Click To Edit"]])
 
 (defcomponent page []

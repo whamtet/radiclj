@@ -48,7 +48,7 @@
          (some identity))))
 
 (defn id->path [id hiccup]
-  (id->path* [] id hiccup))
+  (id->path* [] (.substring id 1) hiccup))
 
 (defn- assocl [m k v]
   (if (seq? m)
