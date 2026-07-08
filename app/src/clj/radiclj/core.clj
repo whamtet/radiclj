@@ -1,10 +1,14 @@
 (ns radiclj.core
   (:require
+    [radiclj.render :as render]
     [radiclj.rt :as rt]
+    [radiclj.tree :as tree]
     [radiclj.util :as util]))
 
 (defn- conj-stack [req name]
-  (update req :stack conj name))
+  (if (:mapped? req)
+    (dissoc req :mapped?)
+    (update req :stack conj name)))
 
 (defn- get-stack [{:keys [stack data]} k]
   (get-in data (conj stack k)))
@@ -42,12 +46,13 @@
 (defn- bind-simple [args]
   (mapcat
    (fn [arg]
-     [arg (wrap-parser arg `(get-in ~'req [:data ~(str arg)]))])
+     [arg (wrap-parser arg `(get-in ~'req [:data ~(keyword arg)]))])
    args))
 (defn- bind-nested [args]
   (mapcat
    (fn [arg]
-     [arg (wrap-parser arg `(get-stack ~'req ~(str arg)))])))
+     [arg (wrap-parser arg `(get-stack ~'req ~(keyword arg)))])
+   args))
 
 (defn- cljs-quote [sym]
   (if false #_env/*compiler* sym `(quote ~sym)))
@@ -59,9 +64,23 @@
        (mapv cljs-quote)))
 
 (defmacro defcomponent [name binding & body]
-  (let [name (vary-meta name assoc :syms (get-syms body) :arglist '[req])
-        [simple _ nested] (partition-by symbol? binding)])
-  `(defn ~name [~'req]
-    (let [~@(bind-simple simple)
-          ~@(bind-nested nested)]
-      ~@body)))
+  (let [name (vary-meta name assoc :syms (get-syms body))
+        [simple _ nested] (partition-by symbol? binding)]
+    `(defn ~name [~'req]
+      (let [~@(bind-simple simple)
+            ~@(bind-nested nested)
+            ~'n (partial rt/stack-name ~'req)]
+        ~@body))))
+
+(defn make-handler [component source]
+  (let [subendpoints (tree/extract-endpoints component)]
+    (fn [req]
+      (if (-> req :request-method (= :get))
+        (->> req source (assoc req :data) component render/html-response)
+        (let [existing-state
+              (->> req
+                   :params
+                   rt/reconstitute
+                   (assoc req :data)
+                   component)]
+          (if-let [{:keys [post target]} (some-> req :params :action read-string)]))))))

@@ -62,54 +62,37 @@
                   %))
 (def parse-kw #(if (string? %) (keyword %) %))
 
+(defn map-component [req component component-name data]
+  (->> data
+       count
+       range
+       (map
+        (fn [i]
+          (-> req
+              (assoc :mapped? true)
+              (assoc-in [:params :i] i)
+              (update :stack conj component-name i)
+              component)))))
 
+(defmacro map-componentm [component data]
+  `(map-component ~'req ~component ~(str component) ~data))
 
-(defn concat-stack [concat stack]
-  (reduce
-    (fn [stack x]
-      (case x
-        ".." (pop stack)
-        "." stack
-        (conj stack x)))
-    stack
-    concat))
+(defn- string-fragment [s]
+  (if (re-find #"^\d+$" s)
+    (Long/parseLong s)
+    (keyword s)))
 
-(defn path [prefix stack p]
-  (str
-    prefix
-    (string/join
-      "_"
-      (if (.startsWith p "\\")
-        (-> p (.split "\\\\") rest)
-        (-> p (.split "\\\\") (concat-stack stack))))))
+(defn- chain [[k v]]
+  (->
+   (mapv string-fragment (-> k name (.split "_")))
+   (conj v)))
 
-(defn- merge-params [req i x extra]
-  (update req :params merge x extra {:index i :i i}))
+(defn reconstitute [params]
+  (->> params
+       (map chain)
+       (reduce
+        #(assoc-in %1 (pop %2) (peek %2))
+        {})))
 
-#_
-(defn map-indexed
-  "Similar to clojure.core/map-indexed but maintains the component stack correctly e.g. with component
-
-  (defcomponent user [req i first-name last-name] ...)
-
-  (map-indexed user
-    [{:first-name \"Fred\" :last-name \"Dagg\"}
-     {:first-name \"Sam\" :last-name \"Smith\"}])
-
-  Adds optional fixed params in extra.
-  "
-  ([f req s] (map-indexed f req s {}))
-  ([f req s extra]
-   (clojure.core/map-indexed
-    (fn [i x]
-      (-> req (conj-stack i) (merge-params i x extra) f))
-    s)))
-
-(defmacro map-indexedm
-  "Zips syms into extra then invokes map-indexed"
-  [f req s & syms]
-  `(map-indexed
-    ~f
-    ~req
-    ~s
-    ~(zipmap (map keyword syms) syms)))
+(defn stack-name [{:keys [stack]} k]
+  (string/join "_" (conj stack k)))

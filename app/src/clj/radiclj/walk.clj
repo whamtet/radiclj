@@ -27,7 +27,30 @@
 (defn transfer-ids [hiccup]
   (postwalk-hiccup transfer-id hiccup))
 
+(defn- write-action [m]
+  (if (-> m :name (= "action"))
+    (update m :value pr-str)))
+(defn write-actions [hiccup]
+  (postwalk-hiccup #(update % 1 write-action) hiccup))
+
+(defn vectorize [hiccup]
+  (walk/postwalk #(if (seq? %) (vec %) %) hiccup))
+
 (defn standardize [hiccup]
-  (->> hiccup uniformize transfer-ids (walk/postwalk #(if (seq? %) (vec %) %))))
+  (->> hiccup uniformize transfer-ids write-actions vectorize))
+
+(defn- id->path* [path id hiccup]
+  (cond
+    (and (hiccup-vector? hiccup) (= id (get-in hiccup [1 :id])))
+    path
+    (vector? hiccup)
+    (->> hiccup
+         (map-indexed
+          (fn [i x]
+            (id->path* (conj path i) id x)))
+         (some identity))))
+
+(defn id->path [id hiccup]
+  (id->path* [] id hiccup))
 
 
