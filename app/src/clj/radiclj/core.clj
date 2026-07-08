@@ -3,7 +3,8 @@
     [radiclj.render :as render]
     [radiclj.rt :as rt]
     [radiclj.tree :as tree]
-    [radiclj.util :as util]))
+    [radiclj.util :as util]
+    [radiclj.walk :as walk]))
 
 (defn- conj-stack [req name]
   (if (:mapped? req)
@@ -72,15 +73,27 @@
             ~'n (partial rt/stack-name ~'req)]
         ~@body))))
 
-(defn make-handler [component source]
-  (let [subendpoints (tree/extract-endpoints component)]
+(defn make-handler [component component-sym source]
+  (let [subendpoints (tree/extract-endpoints component-sym)]
     (fn [req]
-      (if (-> req :request-method (= :get))
-        (->> req source (assoc req :data) component render/html-response)
-        (let [existing-state
-              (->> req
-                   :params
-                   rt/reconstitute
-                   (assoc req :data)
-                   component)]
-          (if-let [{:keys [post target]} (some-> req :params :action read-string)]))))))
+      (render/html-response
+       (if (-> req :request-method (= :get))
+         (->> req source (assoc req :data) component)
+         (let [existing-state
+               (->> req
+                    :params
+                    rt/reconstitute
+                    (assoc req :data)
+                    component)]
+           (if-let [{:keys [post target]} (some-> req :params :action read-string)]
+             (if-let [f (subendpoints post)]
+               (let [standardized (walk/standardize existing-state)
+                     updated (f req)]
+                 (if-let [path (and target (walk/id->path target standardized))]
+                   (walk/unvectorize (assoc-in standardized path updated))
+                   (walk/standardize-light updated)))
+               (walk/standardize-light existing-state))
+             (walk/standardize-light existing-state))))))))
+
+(defmacro make-handlerm [component source]
+  `(make-handler ~component '~component ~source))

@@ -38,6 +38,15 @@
 
 (defn standardize [hiccup]
   (->> hiccup uniformize transfer-ids write-actions vectorize))
+(defn standardize-light [hiccup]
+  (->> hiccup write-actions))
+
+(defn- unvectorize* [hiccup]
+  (if (and (vector? hiccup) (-> hiccup first keyword? not))
+    (seq hiccup)
+    hiccup))
+(defn unvectorize [hiccup]
+  (walk/postwalk unvectorize* hiccup))
 
 (defn- id->path* [path id hiccup]
   (cond
