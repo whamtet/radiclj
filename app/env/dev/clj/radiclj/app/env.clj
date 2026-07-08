@@ -12,3 +12,6 @@
                  (log/info "\n-=[app has shut down successfully]=-"))
    :middleware wrap-dev
    :opts       {:profile       :dev}})
+
+(def dev? true)
+(def prod? false)

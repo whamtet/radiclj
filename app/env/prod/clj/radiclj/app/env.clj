@@ -10,3 +10,6 @@
                  (log/info "\n-=[app has shut down successfully]=-"))
    :middleware (fn [handler _] handler)
    :opts       {:profile :prod}})
+
+(def dev? false)
+(def prod? true)

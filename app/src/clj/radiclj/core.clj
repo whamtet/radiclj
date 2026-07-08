@@ -74,27 +74,32 @@
             ~'h (partial rt/stack-hash ~'req)]
         ~@body))))
 
-(defn make-handler [component component-sym source]
-  (let [subendpoints (tree/extract-endpoints component-sym)]
-    (fn [req]
-      (render/html-response
-       (if (-> req :request-method (= :get))
-         (->> req source (assoc req :data) component)
-         (let [existing-state
-               (->> req
-                    :params
-                    rt/reconstitute
-                    (assoc req :data)
-                    component)]
-           (if-let [{:keys [post target]} (some-> req :params :action read-string)]
-             (if-let [f (subendpoints post)]
-               (let [standardized (walk/standardize existing-state)
-                     updated (f req)]
-                 (if-let [path (and target (walk/id->path target standardized))]
-                   (walk/unvectorize (assoc-in standardized path updated))
-                   (walk/standardize-light updated)))
-               (walk/standardize-light existing-state))
-             (walk/standardize-light existing-state))))))))
+(defn make-handler
+  ([component component-sym]
+   (make-handler component component-sym nil))
+  ([component component-sym source]
+   (let [subendpoints (tree/extract-endpoints component-sym)]
+     (fn [req]
+       (render/html-response
+        (if (-> req :request-method (= :get))
+          (if source
+            (->> req source (assoc req :data) component)
+            (component req))
+          (let [existing-state
+                (->> req
+                     :params
+                     rt/reconstitute
+                     (assoc req :data)
+                     component)]
+            (if-let [{:keys [post target]} (some-> req :params :action read-string)]
+              (if-let [f (subendpoints post)]
+                (let [standardized (walk/standardize existing-state)
+                      updated (f req)]
+                  (if-let [path (and target (walk/id->path target standardized))]
+                    (walk/unvectorize (assoc-in standardized path updated))
+                    (walk/standardize-light updated)))
+                (walk/standardize-light existing-state))
+              (walk/standardize-light existing-state)))))))))
 
 (defmacro make-handlerm [component source]
   `(make-handler ~component '~component ~source))

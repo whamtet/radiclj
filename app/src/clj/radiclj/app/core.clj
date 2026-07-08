@@ -10,7 +10,8 @@
    [radiclj.app.web.handler]
 
     ;; Routes
-   [radiclj.app.web.routes.api])
+   [radiclj.app.web.routes.api]
+   [radiclj.app.web.routes.ui])
   (:gen-class))
 
 ;; log uncaught exceptions in threads
