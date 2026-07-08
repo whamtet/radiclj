@@ -70,7 +70,8 @@
     `(defn ~name [~'req]
       (let [~@(bind-simple simple)
             ~@(bind-nested nested)
-            ~'n (partial rt/stack-name ~'req)]
+            ~'n (partial rt/stack-name ~'req)
+            ~'h (partial rt/stack-hash ~'req)]
         ~@body))))
 
 (defn make-handler [component component-sym source]

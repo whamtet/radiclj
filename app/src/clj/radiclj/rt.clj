@@ -96,3 +96,5 @@
 
 (defn stack-name [{:keys [stack]} k]
   (string/join "_" (conj stack k)))
+(defn stack-hash [req k]
+  (str "#" (stack-name req k)))
