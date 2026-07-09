@@ -67,9 +67,16 @@
   '{n [n (partial radiclj.rt/stack-name req)]
     h [h (partial radiclj.rt/stack-hash req)]
     id [id (radiclj.rt/stack-name req "")]
-    data [data (:data req)]})
+    data [data (:data req)]
+    get? [get? (-> req :request-method (= :get))]
+    post? [post? (-> req :request-method (= :post))]
+    put? [put? (-> req :request-method (= :put))]
+    patch? [patch? (-> req :request-method (= :patch))]
+    delete? [delete? (->  req :request-method (= :delete))]
+    query? [query? (-> req :request-method (= :query))]})
 (def optionals-updater
-  '{data [data (:data req)]})
+  (-> optionals
+      (dissoc 'n 'h 'id)))
 
 (defn- parse-args [[x & rest :as args]]
   (if (keyword? x)
