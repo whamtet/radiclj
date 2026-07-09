@@ -20,22 +20,23 @@
    [:div.form-group
     [:label.mr "Email Address"]
     (emaili "email" email)]
-   [:button.margin "Save"]
-   [:button.margin {:hx-get "form-ro"} "Cancel"]])
+   [:button.margin {:type "submit"} "Save"]
+   [:button.margin {:type "submit" :name "action" :value {:cancel? true}} "Cancel"]])
 
-(defcomponent ^:endpoint form-ro [first-name last-name email]
-  ;; make sure form-edit is included in endpoints
-  form-edit
-  [:form#anchor {:method "POST"}
-   (hidden "first-name" first-name)
-   [:div [:label "First Name"] ": " first-name]
-   (hidden "last-name" last-name)
-   [:div [:label "Last Name"] ": " last-name]
-   (hidden "email" email)
-   [:div [:label "Email"] ": " email]
-   [:button.margin
-    {:type "submit" :name "action" :value {:post "form-edit" :target "#anchor"}}
-    "Click To Edit"]])
+(defcomponent ^:endpoint form-ro [first-name last-name email ^:edn action]
+  (let [[first-name last-name email] (when-not (:cancel? action) [first-name last-name email])]
+    ;; make sure form-edit is included in endpoints
+    form-edit
+    [:form#anchor {:method "POST"}
+     (hidden "first-name" first-name)
+     [:div [:label "First Name"] ": " first-name]
+     (hidden "last-name" last-name)
+     [:div [:label "Last Name"] ": " last-name]
+     (hidden "email" email)
+     [:div [:label "Email"] ": " email]
+     [:button.margin
+      {:type "submit" :name "action" :value {:post "form-edit" :target "#anchor"}}
+      "Click To Edit"]]))
 
 (defcomponent page []
   (list
