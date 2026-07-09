@@ -1,5 +1,6 @@
 (ns radiclj.app.web.views.click-to-edit
   (:require
+    [radiclj.app.web.views.page :as page]
     [radiclj.core :refer [defcomponent]]))
 
 (defn- text [n v]
@@ -39,15 +40,9 @@
       "Click To Edit"]]))
 
 (defcomponent page []
-  (list
-   [:head
-    [:meta {:charset "UTF-8"}]
-    [:meta {:name "viewport"
-            :content "width=device-width, initial-scale=1.0"}]
-    [:link {:rel "stylesheet"
-            :href "/style.css"}]]
-   [:body
-    (form-ro req)]))
+  (page/page
+   "/click_to_edit.css"
+   (form-ro req)))
 
 (defn default-data [_]
   {:first-name "Joe"

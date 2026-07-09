@@ -62,20 +62,21 @@
                   %))
 (def parse-kw #(if (string? %) (keyword %) %))
 
-(defn map-component [req component component-name data]
-  (->> data
+(defn get-stack [{:keys [stack data]} k]
+  (get-in data (conj stack k)))
+(defn map-component [req component k]
+  (->> (get-stack req k)
        count
        range
        (map
         (fn [i]
           (-> req
               (assoc :mapped? true)
-              (assoc-in [:params :i] i)
-              (update :stack conj component-name i)
+              (assoc-in [:data :i] i)
+              (update :stack conj k i)
               component)))))
-
-(defmacro map-componentm [component data]
-  `(map-component ~'req ~component ~(str component) ~data))
+(defmacro map-componentm [component]
+  `(map-component ~'req ~component ~(keyword component)))
 
 (defn- string-fragment [s]
   (if (re-find #"^\d+$" s)
@@ -94,7 +95,9 @@
         #(assoc-in %1 (pop %2) (peek %2))
         {})))
 
+(defn- nname [x]
+  (if (keyword? x) (name x) x))
 (defn stack-name [{:keys [stack]} k]
-  (string/join "_" (conj stack k)))
+  (->> k (conj stack) (map nname) (string/join "_")))
 (defn stack-hash [req k]
   (str "#" (stack-name req k)))

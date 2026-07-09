@@ -2,6 +2,7 @@
   (:require
     [radiclj.app.web.middleware.exception :as exception]
     [radiclj.app.web.middleware.formats :as formats]
+    [radiclj.app.web.views.bulk-update :as bulk-update]
     [radiclj.app.web.views.click-to-edit :as click-to-edit]
     [radiclj.core :as radiclj]
     [integrant.core :as ig]
@@ -23,7 +24,10 @@
 
 ;; Routes
 (defn ui-routes [_opts]
-  [["/" (radiclj/make-handler #'click-to-edit/page click-to-edit/default-data)]])
+  [
+    ["/" (radiclj/make-handler #'bulk-update/page bulk-update/default-data)]
+    ["/click-to-edit" (radiclj/make-handler #'click-to-edit/page click-to-edit/default-data)]
+    ])
 
 (derive :reitit.routes/ui :reitit/routes)
 (defmethod ig/init-key :reitit.routes/ui

@@ -1,0 +1,21 @@
+tr.Active {
+    animation: active-flash 1.2s ease-out;
+}
+
+tr.Inactive {
+    animation: inactive-flash 1.2s ease-out;
+}
+
+@keyframes active-flash {
+    from { background-color: darkseagreen; }
+    to   { background-color: transparent; }
+}
+
+@keyframes inactive-flash {
+    from { background-color: lightcoral; }
+    to   { background-color: transparent; }
+}
+
+.mmargin {
+    margin: 10px;
+}

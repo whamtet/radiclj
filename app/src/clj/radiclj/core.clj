@@ -6,13 +6,12 @@
     [radiclj.util :as util]
     [radiclj.walk :as walk]))
 
-(defn- conj-stack [req name]
+(defn- conjv [a b]
+  (conj (or a []) b))
+(defn conj-stack [req name]
   (if (:mapped? req)
     (dissoc req :mapped?)
-    (update req :stack conj name)))
-
-(defn- get-stack [{:keys [stack data]} k]
-  (get-in data (conj stack k)))
+    (update req :stack conjv name)))
 
 (def parsers
   {:long `rt/parse-long
@@ -52,7 +51,7 @@
 (defn- bind-nested [args]
   (mapcat
    (fn [arg]
-     [arg (wrap-parser arg `(get-stack ~'req ~(keyword arg)))])
+     [arg (wrap-parser arg `(rt/get-stack ~'req ~(keyword arg)))])
    args))
 
 (defn- cljs-quote [sym]
@@ -69,11 +68,18 @@
     h [h (partial radiclj.rt/stack-hash req)]
     id [id (radiclj.rt/stack-name req "")]})
 
+(defn- parse-args [[x & rest :as args]]
+  (if (keyword? x)
+    [[] rest]
+    (let [[simple _ nested] (partition-by keyword? args)]
+      [simple nested])))
+
 (defmacro defcomponent [name binding & body]
   (let [name (vary-meta name assoc :syms (get-syms body))
-        [simple _ nested] (partition-by symbol? binding)]
+        [simple nested] (parse-args binding)]
     `(defn ~name [~'req]
-      (let [~@(bind-simple simple)
+      (let [~'req (conj-stack ~'req ~(keyword name))
+            ~@(bind-simple simple)
             ~@(bind-nested nested)
             ~@(->> body util/flatten-all (mapcat optionals) distinct)]
         ~@body))))

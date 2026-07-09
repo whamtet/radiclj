@@ -1,7 +1,7 @@
 (ns radiclj.tree)
 
 (defn- mapmerge [f s]
-  (apply merge (map f s)))
+  (apply merge {} (map f s)))
 
 (defn- extract-endpoints* [ns sym exclusions]
   (when-let [var (ns-resolve ns sym)]
