@@ -25,7 +25,10 @@
 ;; Routes
 (defn ui-routes [_opts]
   [
-    ["/" (radiclj/make-handler #'bulk-update/page bulk-update/default-data)]
+    ["/" (radiclj/make-handler
+          #'bulk-update/page
+          bulk-update/default-data
+          bulk-update/updater)]
     ["/click-to-edit" (radiclj/make-handler #'click-to-edit/page click-to-edit/default-data)]
     ])
 

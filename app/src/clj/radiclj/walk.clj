@@ -28,9 +28,11 @@
         (assoc-in [1 :id] id))
     v))
 
+(defn- pr-str2 [s]
+  (if (string? s) s (pr-str s)))
 (defn- write-action [m]
   (if (-> m :name (= "action"))
-    (update m :value pr-str)
+    (update m :value pr-str2)
     m))
 
 (defn standardize [hiccup]

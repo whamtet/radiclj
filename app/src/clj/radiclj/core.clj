@@ -67,6 +67,8 @@
   '{n [n (partial radiclj.rt/stack-name req)]
     h [h (partial radiclj.rt/stack-hash req)]
     id [id (radiclj.rt/stack-name req "")]})
+(def optionals-updater
+  '{data [data (:data req)]})
 
 (defn- parse-args [[x & rest :as args]]
   (if (keyword? x)
@@ -84,17 +86,36 @@
             ~@(->> body util/flatten-all (mapcat optionals) distinct)]
         ~@body))))
 
-(defn- apply-component [req component]
-  (->> req
-       :params
-       rt/reconstitute
-       (assoc req :data)
-       component
-       walk/standardize))
+(defmacro defupdater [name binding & body]
+  (let [[simple nested] (parse-args binding)]
+    `(defn ~name [~'req]
+      (let [~@(bind-simple simple)
+            ~@(bind-nested nested)
+            ~@(->> body util/flatten-all (mapcat optionals-updater) distinct)]
+        ~@body))))
+
+(defn- apply-component [req updater component]
+  (if updater
+    (->> req
+         :params
+         rt/reconstitute
+         (assoc req :data)
+         updater
+         component
+         walk/standardize)
+    (->> req
+         :params
+         rt/reconstitute
+         (assoc req :data)
+         component
+         walk/standardize)))
+
 (defn make-handler
   ([root-var]
-   (make-handler root-var nil))
+   (make-handler root-var nil nil))
   ([root-var source]
+   (make-handler root-var source nil))
+  ([root-var source updater]
    (let [subendpoints (tree/extract-endpoints root-var)
          component @root-var]
      (fn [req]
@@ -105,12 +126,12 @@
             (-> req component walk/standardize))
           (if-let [{:keys [post target]} (some-> req :params :action read-string)]
             (if-let [f (subendpoints post)]
-              (let [updated (apply-component req f)]
+              (let [updated (apply-component req updater f)]
                 (if target
-                  (let [standardized (apply-component req component)]
+                  (let [standardized (apply-component req nil component)]
                     (if-let [path (walk/id->path target standardized)]
                       (walk/assocl-in standardized path updated)
                       updated))
                   updated))
-              (apply-component req component))
-            (apply-component req component))))))))
+              (apply-component req updater component))
+            (apply-component req updater component))))))))
