@@ -4,6 +4,7 @@
     [radiclj.app.web.middleware.formats :as formats]
     [radiclj.app.web.views.bulk-update :as bulk-update]
     [radiclj.app.web.views.click-to-edit :as click-to-edit]
+    [radiclj.app.web.views.click-to-load :as click-to-load]
     [radiclj.core :as radiclj]
     [integrant.core :as ig]
     [reitit.ring.middleware.muuntaja :as muuntaja]
@@ -26,9 +27,13 @@
 (defn ui-routes [_opts]
   [
     ["/" (radiclj/make-handler
-          #'bulk-update/page
-          bulk-update/default-data
-          bulk-update/updater)]
+           #'click-to-load/page
+          click-to-load/default-data
+          click-to-load/updater)]
+    ["/bulk-update" (radiclj/make-handler
+                     #'bulk-update/page
+                     bulk-update/default-data
+                     bulk-update/updater)]
     ["/click-to-edit" (radiclj/make-handler #'click-to-edit/page click-to-edit/default-data)]
     ])
 

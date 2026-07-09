@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [parse-long parse-double parse-boolean])
   (:require
     [clojure.data.json :as json]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [clojure.walk :as walk]))
 
 (def parse-date #(if (string? %)
                    (read-string (format "#inst \"%s\"" %))
@@ -87,13 +88,18 @@
   (->
    (mapv string-fragment (-> k name (.split "_")))
    (conj v)))
+(defn- m->v [m]
+  (if (and (map? m) (->> m keys (every? number?)))
+    (->> m count range (mapv m))
+    m))
 
 (defn reconstitute [params]
   (->> params
        (map chain)
        (reduce
         #(assoc-in %1 (pop %2) (peek %2))
-        {})))
+        {})
+       (walk/postwalk m->v)))
 
 (defn- nname [x]
   (if (keyword? x) (name x) x))

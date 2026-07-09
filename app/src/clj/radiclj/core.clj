@@ -66,7 +66,8 @@
 (def optionals
   '{n [n (partial radiclj.rt/stack-name req)]
     h [h (partial radiclj.rt/stack-hash req)]
-    id [id (radiclj.rt/stack-name req "")]})
+    id [id (radiclj.rt/stack-name req "")]
+    data [data (:data req)]})
 (def optionals-updater
   '{data [data (:data req)]})
 
