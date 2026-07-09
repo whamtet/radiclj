@@ -18,7 +18,6 @@
    [:td agent-id]])
 
 (defcomponent page []
-  (prn 'data data)
   (page/page
    "/rows.css"
    [:form {:method "POST"}

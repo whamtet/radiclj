@@ -5,6 +5,7 @@
     [radiclj.app.web.views.bulk-update :as bulk-update]
     [radiclj.app.web.views.click-to-edit :as click-to-edit]
     [radiclj.app.web.views.click-to-load :as click-to-load]
+    [radiclj.app.web.views.delete-row :as delete-row]
     [radiclj.core :as radiclj]
     [integrant.core :as ig]
     [reitit.ring.middleware.muuntaja :as muuntaja]
@@ -27,9 +28,13 @@
 (defn ui-routes [_opts]
   [
     ["/" (radiclj/make-handler
-           #'click-to-load/page
-          click-to-load/default-data
-          click-to-load/updater)]
+          #'delete-row/page
+          delete-row/default-data
+          delete-row/updater)]
+    ["/click-to-load" (radiclj/make-handler
+                       #'click-to-load/page
+                       click-to-load/default-data
+                       click-to-load/updater)]
     ["/bulk-update" (radiclj/make-handler
                      #'bulk-update/page
                      bulk-update/default-data
